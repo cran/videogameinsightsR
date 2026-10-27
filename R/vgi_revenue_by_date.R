@@ -109,7 +109,7 @@ vgi_revenue_by_date <- function(date,
   formatted_date <- format_date(date)
   
   steam_app_ids <- if (is.null(steam_app_ids)) NULL else as.numeric(steam_app_ids)
-  fetch_limit <- if (is.null(steam_app_ids)) 2000 else max(50, length(steam_app_ids) * 5)
+  fetch_limit <- if (is.null(steam_app_ids)) 1000 else min(1000, max(50, length(steam_app_ids) * 5))
 
   result <- .vgi_historical_results(
     date = formatted_date,
@@ -120,13 +120,13 @@ vgi_revenue_by_date <- function(date,
   )
 
   if (!is.data.frame(result) || nrow(result) == 0) {
-    return(.vgi_clean_names(data.frame(
+    return(.vgi_clean_names(tibble::tibble(
       steamAppId = integer(),
       date = character(),
       revenue = numeric(),
       dailyRevenue = numeric(),
       revenueRank = integer(),
-      stringsAsFactors = FALSE
+
     )))
   }
 
@@ -134,22 +134,22 @@ vgi_revenue_by_date <- function(date,
     result <- result[result$platform == "steam", , drop = FALSE]
   }
 
-  df <- data.frame(
+  df <- tibble::tibble(
     steamAppId = as.integer(result$externalId %||% NA),
     date = formatted_date,
     revenue = as.numeric(result$revenueTotal %||% NA),
     dailyRevenue = as.numeric(result$revenueChange %||% NA),
-    stringsAsFactors = FALSE
+
   )
   df <- df[!is.na(df$steamAppId), , drop = FALSE]
   if (nrow(df) == 0) {
-    return(.vgi_clean_names(data.frame(
+    return(.vgi_clean_names(tibble::tibble(
       steamAppId = integer(),
       date = character(),
       revenue = numeric(),
       dailyRevenue = numeric(),
       revenueRank = integer(),
-      stringsAsFactors = FALSE
+
     )))
   }
 

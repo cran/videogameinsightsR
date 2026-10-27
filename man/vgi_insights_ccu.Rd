@@ -21,34 +21,17 @@ Defaults to the VGI_AUTH_TOKEN environment variable.}
 \value{
 A list containing:
 \describe{
-\item{steamAppId}{Integer. The Steam App ID}
-\item{playerHistory}{Data frame with columns:
-\itemize{
-\item date: Date of the data point
-\item avg: Average concurrent players
-\item median: Median concurrent players
-\item max: Maximum concurrent players
-}
-}
+\item{steam_app_id}{Integer. The Steam App ID}
+\item{player_history}{Tibble with columns \code{date}, \code{avg}, \code{median}, \code{max},
+\code{min} (concurrent players), sorted by date}
 }
 }
 \description{
-Retrieve concurrent player count history for a specific game.
+Retrieve the daily concurrent player history for a single Steam game.
 }
 \examples{
 \dontrun{
-# Get CCU data for Counter-Strike 2
-ccu_data <- vgi_insights_ccu(steam_app_id = 730)
-
-# Plot max concurrent players over time
-plot(ccu_data$playerHistory$date, ccu_data$playerHistory$max,
-     type = "l",
-     main = "Peak Concurrent Players",
-     xlab = "Date",
-     ylab = "Players")
-
-# Calculate average peak CCU
-avg_peak <- mean(ccu_data$playerHistory$max, na.rm = TRUE)
-print(paste("Average peak CCU:", round(avg_peak)))
+ccu <- vgi_insights_ccu(steam_app_id = 4019220)
+plot(ccu$player_history$date, ccu$player_history$max, type = "l")
 }
 }

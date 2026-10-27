@@ -24,7 +24,8 @@ apply_rate_limit(
 \item{show_messages}{Whether to show messages}
 }
 \value{
-No return value. Called for side effects (optional delay) and returns \code{invisible(NULL)}.
+No return value. Called for side effects (optional delay) and
+returns \code{invisible(NULL)}.
 }
 \description{
 Simple function to add rate limiting to date-based loops

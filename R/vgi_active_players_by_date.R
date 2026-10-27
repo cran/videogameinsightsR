@@ -134,7 +134,7 @@ vgi_active_players_by_date <- function(date,
   } else if (!is.null(steam_app_ids)) {
     max(50, length(steam_app_ids) * 5)
   } else {
-    2000
+    1000
   }
 
   result <- .vgi_historical_results(
@@ -146,14 +146,14 @@ vgi_active_players_by_date <- function(date,
   )
 
   if (!is.data.frame(result) || nrow(result) == 0) {
-    empty_df <- .vgi_clean_names(data.frame(
+    empty_df <- .vgi_clean_names(tibble::tibble(
       steamAppId = integer(),
       date = character(),
       dau = integer(),
       mau = integer(),
       dauMauRatio = numeric(),
       activeRank = integer(),
-      stringsAsFactors = FALSE
+
     ))
     attr(empty_df, "requested_date") <- date
     attr(empty_df, "actual_date") <- formatted_date
@@ -164,23 +164,23 @@ vgi_active_players_by_date <- function(date,
     result <- result[result$platform == "steam", , drop = FALSE]
   }
 
-  df <- data.frame(
+  df <- tibble::tibble(
     steamAppId = as.integer(result$externalId %||% NA),
     date = formatted_date,
     dau = as.integer(result$dau %||% NA),
     mau = as.integer(result$mau %||% NA),
-    stringsAsFactors = FALSE
+
   )
   df <- df[!is.na(df$steamAppId), , drop = FALSE]
   if (nrow(df) == 0) {
-    empty_df <- .vgi_clean_names(data.frame(
+    empty_df <- .vgi_clean_names(tibble::tibble(
       steamAppId = integer(),
       date = character(),
       dau = integer(),
       mau = integer(),
       dauMauRatio = numeric(),
       activeRank = integer(),
-      stringsAsFactors = FALSE
+
     ))
     attr(empty_df, "requested_date") <- date
     attr(empty_df, "actual_date") <- formatted_date

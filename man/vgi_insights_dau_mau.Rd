@@ -2,7 +2,7 @@
 % Please edit documentation in R/vgi_insights_dau_mau.R
 \name{vgi_insights_dau_mau}
 \alias{vgi_insights_dau_mau}
-\title{Get Daily and Monthly Active Users Data}
+\title{Get Daily and Monthly Active Users (DAU/MAU)}
 \usage{
 vgi_insights_dau_mau(
   steam_app_id,
@@ -21,69 +21,19 @@ Defaults to the VGI_AUTH_TOKEN environment variable.}
 \value{
 A list containing:
 \describe{
-\item{steamAppId}{Integer. The Steam App ID}
-\item{playerHistory}{Data frame with columns:
-\itemize{
-\item date: Date of the data point
-\item dau: Daily active users count
-\item mau: Monthly active users count
-}
-}
+\item{steam_app_id}{Integer. The Steam App ID}
+\item{player_history}{Tibble with columns \code{date}, \code{dau}, \code{mau}}
 }
 }
 \description{
-Retrieve daily active users (DAU) and monthly active users (MAU) data for a specific game.
+Retrieve the active player history for a single Steam game.
 }
 \details{
-You can calculate the DAU/MAU ratio from the returned data:
-\code{dau_mau_ratio = dau / mau}
-
-The DAU/MAU ratio is a key metric for measuring player engagement:
-\itemize{
-\item A ratio of 1.0 means every monthly user plays daily (perfect retention)
-\item A ratio of 0.5 means the average player plays 15 days per month
-\item A ratio of 0.1 means the average player plays 3 days per month
-}
-
-Industry benchmarks:
-\itemize{
-\item Casual games: 0.1-0.2
-\item Mid-core games: 0.2-0.4
-\item Hardcore games: 0.4-0.6
-}
+DAU is available from 2024-03-18 and MAU from 2024-03-23.
 }
 \examples{
 \dontrun{
-# Get DAU/MAU data for a game
-active_players <- vgi_insights_dau_mau(steam_app_id = 730)
-
-# Calculate DAU/MAU ratios
-active_players$playerHistory$dau_mau_ratio <- 
-  active_players$playerHistory$dau / active_players$playerHistory$mau
-
-# Calculate average DAU/MAU ratio
-avg_ratio <- mean(active_players$playerHistory$dau_mau_ratio, na.rm = TRUE)
-print(paste("Average DAU/MAU ratio:", round(avg_ratio, 3)))
-
-# Plot DAU and MAU over time
-old_par <- par(no.readonly = TRUE)
-par(mfrow = c(2, 1))
-plot(active_players$playerHistory$date, active_players$playerHistory$dau, 
-     type = "l", col = "blue",
-     main = "Daily Active Users", 
-     xlab = "Date", ylab = "DAU")
-plot(active_players$playerHistory$date, active_players$playerHistory$mau, 
-     type = "l", col = "red",
-     main = "Monthly Active Users", 
-     xlab = "Date", ylab = "MAU")
-
-# Analyze retention trends
-plot(active_players$playerHistory$date, 
-     active_players$playerHistory$dau_mau_ratio,
-     type = "l", ylim = c(0, 1),
-     main = "Player Retention (DAU/MAU Ratio)",
-     xlab = "Date", ylab = "DAU/MAU Ratio")
-abline(h = 0.3, col = "gray", lty = 2)  # Industry average
-par(old_par)
+active <- vgi_insights_dau_mau(steam_app_id = 4019220)
+tail(active$player_history)
 }
 }

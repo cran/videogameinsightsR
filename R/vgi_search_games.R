@@ -80,13 +80,14 @@ vgi_search_games <- function(query,
   }
 
   if (!is.data.frame(all_games) || nrow(all_games) == 0) {
-    return(.vgi_clean_names(data.frame(steamAppId = integer(), name = character(), id = integer(), stringsAsFactors = FALSE)))
+    return(.vgi_clean_names(tibble::tibble(steamAppId = integer(), name = character(), id = integer())))
   }
 
   all_games <- .vgi_clean_names(all_games)
   if (!"name" %in% names(all_games)) all_games$name <- NA_character_
   if (!"steam_app_id" %in% names(all_games) && "id" %in% names(all_games)) all_games$steam_app_id <- as.integer(all_games$id)
   if (!"id" %in% names(all_games) && "steam_app_id" %in% names(all_games)) all_games$id <- all_games$steam_app_id
+  all_games <- all_games[!is.na(all_games$steam_app_id), , drop = FALSE]
 
   name_col <- all_games$name
   name_col[is.na(name_col)] <- ""
@@ -152,6 +153,7 @@ vgi_search_games <- function(query,
       if (!"id" %in% names(all_games_api) && "steam_app_id" %in% names(all_games_api)) {
         all_games_api$id <- all_games_api$steam_app_id
       }
+      all_games_api <- all_games_api[!is.na(all_games_api$steam_app_id), , drop = FALSE]
       nm <- all_games_api$name
       nm[is.na(nm)] <- ""
       keep_cols <- intersect(c("steam_app_id", "name", "id"), names(all_games_api))

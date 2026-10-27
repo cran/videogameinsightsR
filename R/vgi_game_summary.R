@@ -162,7 +162,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(concurrent_data) > 0) {
-      results$time_series$concurrent <- do.call(rbind, concurrent_data)
+      results$time_series$concurrent <- dplyr::bind_rows(concurrent_data)
     }
   }
   
@@ -207,7 +207,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(active_data) > 0) {
-      results$time_series$active <- do.call(rbind, active_data)
+      results$time_series$active <- dplyr::bind_rows(active_data)
       message(paste0("  Retrieved active player data for ", length(active_data), " days"))
     } else {
       message("  No active player data retrieved (dates may be before availability)")
@@ -245,7 +245,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(revenue_data) > 0) {
-      results$time_series$revenue <- do.call(rbind, revenue_data)
+      results$time_series$revenue <- dplyr::bind_rows(revenue_data)
       message(paste0("  Retrieved revenue data for ", length(revenue_data), " game-days"))
     } else {
       message("  No revenue data retrieved (may not be available for these games)")
@@ -285,7 +285,7 @@ vgi_game_summary <- function(steam_app_ids,
   }
   
   if (length(metadata_list) > 0) {
-    results$metadata <- do.call(rbind, metadata_list)
+    results$metadata <- dplyr::bind_rows(metadata_list)
     message(paste0("  Retrieved metadata for ", length(metadata_list), " games"))
   } else {
     message("  No metadata retrieved")
@@ -322,7 +322,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(units_data) > 0) {
-      results$time_series$units <- do.call(rbind, units_data)
+      results$time_series$units <- dplyr::bind_rows(units_data)
       message(paste0("  Retrieved units data for ", length(units_data), " days"))
     } else {
       message("  No units sold data retrieved")
@@ -356,7 +356,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(reviews_data) > 0) {
-      results$time_series$reviews <- do.call(rbind, reviews_data)
+      results$time_series$reviews <- dplyr::bind_rows(reviews_data)
       message(paste0("  Retrieved reviews data for ", length(reviews_data), " days"))
     } else {
       message("  No reviews data retrieved")
@@ -390,7 +390,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(followers_data) > 0) {
-      results$time_series$followers <- do.call(rbind, followers_data)
+      results$time_series$followers <- dplyr::bind_rows(followers_data)
       message(paste0("  Retrieved followers data for ", length(followers_data), " days"))
     } else {
       message("  No followers data retrieved")
@@ -424,7 +424,7 @@ vgi_game_summary <- function(steam_app_ids,
     }
     
     if (length(wishlists_data) > 0) {
-      results$time_series$wishlists <- do.call(rbind, wishlists_data)
+      results$time_series$wishlists <- dplyr::bind_rows(wishlists_data)
       message(paste0("  Retrieved wishlists data for ", length(wishlists_data), " days"))
     } else {
       message("  No wishlists data retrieved")
@@ -436,9 +436,9 @@ vgi_game_summary <- function(steam_app_ids,
   summary_data <- list()
   
   for (id in steam_app_ids) {
-    game_summary <- data.frame(
+    game_summary <- tibble::tibble(
       steam_app_id = id,
-      stringsAsFactors = FALSE
+
     )
     
     # Add game name from metadata
@@ -529,7 +529,7 @@ vgi_game_summary <- function(steam_app_ids,
   }
   
   if (length(summary_data) > 0) {
-    results$summary_table <- do.call(rbind, summary_data)
+    results$summary_table <- dplyr::bind_rows(summary_data)
   }
   
   # Add date range to results

@@ -1,157 +1,49 @@
 #' Get Developer Information
 #'
-#' Retrieve detailed information about a game developer.
+#' Retrieve a developer's summary from `/companies/developers`. Revenue and
+#' game counts are VGI's Steam figures; release counts are given per platform.
+#' For many developers or the full per-platform breakdown use
+#' [vgi_developers_overview()].
 #'
-#' @param company_id Integer. The developer's company ID.
-#' @param auth_token Character string. Your VGI API authentication token.
-#'   Defaults to the VGI_AUTH_TOKEN environment variable.
-#' @param headers List. Optional custom headers to include in the API request.
+#' @param company_id Integer. The VGI company ID of the developer.
+#' @inheritParams vgi_publisher_info
 #'
-#' @return A list containing developer information with fields:
-#' \describe{
-#'   \item{companyId}{Integer. The company ID}
-#'   \item{name}{Character. Developer name}
-#'   \item{foundedDate}{Character. Date the company was founded}
-#'   \item{headquarters}{Character. Company headquarters location}
-#'   \item{employeeCount}{Integer. Number of employees}
-#'   \item{website}{Character. Company website URL}
-#'   \item{description}{Character. Company description}
-#'   \item{totalGames}{Integer. Total number of games developed}
-#'   \item{activeGames}{Integer. Number of currently active games}
-#' }
-#'
-#' @details
-#' Developer information can be used to:
-#' \itemize{
-#'   \item Research company backgrounds and history
-#'   \item Analyze developer portfolio performance
-#'   \item Identify experienced developers in specific genres
-#'   \item Track developer growth over time
-#' }
+#' @return A one-row [tibble][tibble::tibble] with columns `company_id`,
+#'   `name`, `slug`, `classification`, `country`, `games_developed`,
+#'   `games_in_development`, `revenue_total`, `revenue_avg_per_game`,
+#'   `revenue_median_per_game`, `games_released_steam`,
+#'   `games_released_playstation`, `games_released_xbox` and `vgi_url`.
+#'   Empty when the developer is unknown.
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' # Get information about a developer
-#' dev_info <- vgi_developer_info(company_id = 24569)
-#' 
-#' # Display developer details
-#' cat("Developer:", dev_info$name, "\n")
-#' cat("Founded:", dev_info$foundedDate, "\n")
-#' cat("Total Games:", dev_info$totalGames, "\n")
-#' cat("Active Games:", dev_info$activeGames, "\n")
-#' 
-#' # Check developer size
-#' if (!is.null(dev_info$employeeCount)) {
-#'   if (dev_info$employeeCount < 10) {
-#'     cat("This is an indie developer\n")
-#'   } else if (dev_info$employeeCount < 100) {
-#'     cat("This is a mid-sized developer\n")
-#'   } else {
-#'     cat("This is a large developer\n")
-#'   }
-#' }
+#' vgi_developer_info(28663)
 #' }
 vgi_developer_info <- function(company_id,
                               auth_token = Sys.getenv("VGI_AUTH_TOKEN"),
                               headers = list()) {
-  
-  # Validate inputs
   validate_numeric(company_id, "company_id")
-  
-  # Make API request
-  result <- make_api_request(
-    endpoint = "companies/developers",
-    query_params = list(vgiIds = as.character(company_id), limit = 1),
-    auth_token = auth_token,
-    method = "GET",
-    headers = headers
-  )
-
-  rows <- .vgi_unwrap_results(result)
-  if (!is.data.frame(rows) || nrow(rows) == 0) return(list())
-  as.list(rows[1, , drop = FALSE])
+  .vgi_company_info("developers", "gamesDeveloped", company_id, auth_token, headers)
 }
 
-#' Get Game IDs by Developer
+#' Get a Developer's Steam Games
 #'
-#' Retrieve a list of Steam App IDs for all games by a specific developer.
+#' Retrieve the Steam App IDs of the games a company develops. The VGI game
+#' IDs from `/companies/developers/game-ids` are resolved to Steam App IDs
+#' through `/games/metadata`; games that are not on Steam are dropped. For the
+#' VGI IDs of games on every platform use [vgi_all_developer_games()].
 #'
-#' @param company_id Integer. The developer's company ID.
-#' @param auth_token Character string. Your VGI API authentication token.
-#'   Defaults to the VGI_AUTH_TOKEN environment variable.
-#' @param headers List. Optional custom headers to include in the API request.
-#'
-#' @return A numeric vector of Steam App IDs for games developed by this company.
-#'
-#' @details
-#' This endpoint now returns only game IDs instead of full game metadata.
-#' To get detailed information about each game, use \code{vgi_game_metadata()}
-#' with the returned IDs.
-#' 
-#' This approach is more efficient when you only need to:
-#' \itemize{
-#'   \item Count the number of games by a developer
-#'   \item Check if a developer made a specific game
-#'   \item Get a subset of games for detailed analysis
-#' }
-#'
+#' @inheritParams vgi_developer_info
+#' @return An integer vector of Steam App IDs, sorted (empty when none).
 #' @export
 #' @examples
 #' \dontrun{
-#' # Get all game IDs for a developer
-#' game_ids <- vgi_developer_games(company_id = 24569)
-#' 
-#' # Count games by this developer
-#' cat("Total games:", length(game_ids), "\n")
-#' 
-#' # Get detailed info for the first 5 games
-#' if (length(game_ids) > 0) {
-#'   first_five <- head(game_ids, 5)
-#'   game_details <- lapply(first_five, vgi_game_metadata)
-#'   
-#'   # Display game names
-#'   for (game in game_details) {
-#'     cat(game$name, "(", game$steamAppId, ")\n")
-#'   }
-#' }
-#' 
-#' # Check if developer made a specific game
-#' target_game_id <- 730
-#' if (target_game_id %in% game_ids) {
-#'   cat("Yes, this developer made game", target_game_id, "\n")
-#' }
-#' 
-#' # Analyze developer's recent releases
-#' if (length(game_ids) > 0) {
-#'   # Get metadata for all games
-#'   all_games <- vgi_game_metadata_batch(game_ids)
-#'   
-#'   # Find games released in last 2 years
-#'   recent_games <- all_games[
-#'     as.Date(all_games$releaseDate) > Sys.Date() - 730,
-#'   ]
-#'   
-#'   cat("Games released in last 2 years:", nrow(recent_games), "\n")
-#' }
+#' vgi_developer_games(28663)
 #' }
 vgi_developer_games <- function(company_id,
                                auth_token = Sys.getenv("VGI_AUTH_TOKEN"),
                                headers = list()) {
-  
-  # Validate inputs
   validate_numeric(company_id, "company_id")
-  
-  # Make API request
-  result <- make_api_request(
-    endpoint = "companies/developers/game-ids",
-    query_params = list(vgiIds = as.character(company_id), limit = 1),
-    auth_token = auth_token,
-    method = "GET",
-    headers = headers
-  )
-
-  rows <- .vgi_unwrap_results(result)
-  if (!is.data.frame(rows) || nrow(rows) == 0) return(numeric(0))
-  as.numeric(unlist(rows$vgiGameIds[[1]]))
+  .vgi_company_steam_games("developers", company_id, auth_token, headers)
 }

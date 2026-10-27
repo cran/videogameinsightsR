@@ -1,126 +1,61 @@
-#' Get All Publisher Game IDs
+#' Get Game IDs for Publishers
 #'
-#' Retrieve a comprehensive mapping of all publishers to their game IDs,
-#' useful for analyzing publishing portfolios and market dynamics.
+#' Retrieve the VGI game IDs attached to each publisher from
+#' `/companies/publishers/game-ids`. Games on every platform are included; use
+#' [vgi_publisher_games()] for one publisher's Steam App IDs.
 #'
+#' @param vgi_ids Integer vector. VGI company IDs to select.
+#' @param slugs Character vector. VGI company slugs to select.
+#' @param limit Integer. Records per page (maximum 1000).
+#' @param cursor Integer. Cursor from a previous page.
+#' @param all_pages Logical. Fetch every page.
 #' @param auth_token Character string. Your VGI API authentication token.
 #'   Defaults to the VGI_AUTH_TOKEN environment variable.
 #' @param headers List. Optional custom headers to include in the API request.
 #'
-#' @return A data frame with columns:
-#' \describe{
-#'   \item{publisherId}{Integer. The publisher's company ID}
-#'   \item{gameIds}{List. A list of Steam App IDs for games by this publisher}
-#'   \item{gameCount}{Integer. Number of games by this publisher}
-#' }
-#'
-#' @details
-#' This endpoint provides a complete publisher-to-games mapping, enabling:
-#' \itemize{
-#'   \item Publishing portfolio analysis
-#'   \item Market share calculations
-#'   \item Publisher strategy assessment
-#'   \item Competitive landscape mapping
-#'   \item Publisher ranking by catalog size
-#' }
-#' 
-#' Publishers often have larger portfolios than developers as they
-#' may publish games from multiple development studios.
+#' @return A [tibble][tibble::tibble] with columns `publisher_id`, `name`,
+#'   `game_ids` (list-column of VGI game IDs) and `game_count`, sorted by game
+#'   count. The attribute `next_cursor` carries the cursor for the next page.
 #'
 #' @export
 #' @examples
 #' \dontrun{
-#' # Get all publisher game mappings
-#' pub_games <- vgi_all_publisher_games()
-#' 
-#' # Find largest publishers by catalog size
-#' top_pubs <- head(pub_games[order(-pub_games$gameCount), ], 20)
-#' cat("Top 20 largest publishers:\n")
-#' print(top_pubs[, c("publisherId", "gameCount")])
-#' 
-#' # Get publisher names for context
-#' pub_list <- vgi_publisher_list()
-#' top_pubs_named <- merge(top_pubs, pub_list, 
-#'                        by.x = "publisherId", by.y = "id")
-#' print(top_pubs_named[, c("name", "gameCount")])
-#' 
-#' # Compare with developer portfolios
-#' dev_games <- vgi_all_developer_games()
-#' cat("Average games per developer:", round(mean(dev_games$gameCount), 1), "\n")
-#' cat("Average games per publisher:", round(mean(pub_games$gameCount), 1), "\n")
-#' 
-#' # Find mega-publishers (>100 games)
-#' mega_pubs <- pub_games[pub_games$gameCount > 100, ]
-#' cat("Publishers with >100 games:", nrow(mega_pubs), "\n")
-#' 
-#' # Analyze publisher concentration
-#' total_pub_games <- sum(pub_games$gameCount)
-#' top_10_pub_games <- sum(head(pub_games$gameCount, 10))
-#' concentration <- (top_10_pub_games / total_pub_games) * 100
-#' cat(sprintf("Top 10 publishers control %.1f%% of published games\n", 
-#'             concentration))
-#' 
-#' # Find publishers that also develop
-#' dev_list <- vgi_developer_list()
-#' pub_dev_overlap <- intersect(pub_list$name, dev_list$name)
-#' cat("Companies that both publish and develop:", 
-#'     length(pub_dev_overlap), "\n")
-#' 
-#' # Analyze specific publisher's portfolio
-#' ea_id <- 1  # Example: Electronic Arts
-#' ea_games <- pub_games$gameIds[pub_games$publisherId == ea_id][[1]]
-#' if (length(ea_games) > 0) {
-#'   cat("EA has published", length(ea_games), "games\n")
-#'   
-#'   # Get recent EA releases
-#'   ea_metadata <- vgi_game_metadata_batch(ea_games)
-#'   recent_ea <- ea_metadata[as.Date(ea_metadata$releaseDate) > 
-#'                           as.Date("2023-01-01"), ]
-#'   cat("EA games released since 2023:", nrow(recent_ea), "\n")
+#' vgi_all_publisher_games(vgi_ids = 28663)
 #' }
-#' 
-#' # Distribution of publisher sizes
-#' pub_size_dist <- table(cut(pub_games$gameCount,
-#'                           breaks = c(1, 2, 5, 10, 20, 50, 100, Inf),
-#'                           labels = c("1", "2-4", "5-9", "10-19", 
-#'                                     "20-49", "50-99", "100+"),
-#'                           right = FALSE))
-#' 
-#' barplot(pub_size_dist,
-#'         main = "Distribution of Publishers by Portfolio Size",
-#'         xlab = "Number of Games Published",
-#'         ylab = "Number of Publishers",
-#'         col = "purple")
-#' }
-vgi_all_publisher_games <- function(auth_token = Sys.getenv("VGI_AUTH_TOKEN"), headers = list()) {
-  
-  # Make API request
-  result <- make_api_request(
-    endpoint = "companies/publishers/game-ids",
-    auth_token = auth_token,
-    method = "GET",
-    headers = headers
-  )
+vgi_all_publisher_games <- function(auth_token = Sys.getenv("VGI_AUTH_TOKEN"),
+                                    headers = list(),
+                                    vgi_ids = NULL,
+                                    slugs = NULL,
+                                    limit = NULL,
+                                    cursor = NULL,
+                                    all_pages = FALSE) {
+  .vgi_company_game_ids("publishers", "publisherId", vgi_ids, slugs, limit, cursor,
+                        all_pages, auth_token, headers)
+}
 
-  rows <- .vgi_unwrap_results(result)
+.vgi_company_game_ids <- function(kind, id_col, vgi_ids, slugs, limit, cursor,
+                                  all_pages, auth_token, headers) {
+  qp <- .vgi_v4_query(vgi_ids = vgi_ids, slugs = slugs, limit = limit, cursor = cursor)
+  page <- .vgi_fetch_v4_pages(sprintf("companies/%s/game-ids", kind), qp, auth_token = auth_token,
+                              headers = headers, all_pages = all_pages)
+  rows <- page$results
   if (!is.data.frame(rows) || nrow(rows) == 0) {
-    return(.vgi_clean_names(data.frame(
-      publisherId = integer(),
-      gameIds = I(list()),
-      gameCount = integer(),
-      stringsAsFactors = FALSE
-    )))
+    out <- tibble::tibble(id = integer(), name = character(), gameIds = I(list()),
+                          gameCount = integer())
+    names(out)[1] <- id_col
+    out <- .vgi_clean_names(out)
+    attr(out, "next_cursor") <- page$next_cursor
+    return(out)
   }
-
-  df <- do.call(rbind, lapply(seq_len(nrow(rows)), function(i) {
-    game_ids <- as.integer(unlist(rows$vgiGameIds[[i]]))
-    data.frame(
-      publisherId = as.integer(rows$vgiCompanyId[i]),
-      gameIds = I(list(game_ids)),
-      gameCount = length(game_ids),
-      stringsAsFactors = FALSE
-    )
-  }))
-  df <- df[order(-df$gameCount), , drop = FALSE]
-  .vgi_clean_names(df)
+  game_ids <- lapply(rows$vgiGameIds, function(x) as.integer(unlist(x)))
+  out <- tibble::tibble(
+    id = as.integer(rows$vgiCompanyId),
+    name = as.character(.vgi_col(rows, "name", NA_character_)),
+    gameIds = I(game_ids),
+    gameCount = vapply(game_ids, length, integer(1))
+  )
+  names(out)[1] <- id_col
+  out <- .vgi_clean_names(out[order(-out$gameCount), , drop = FALSE])
+  attr(out, "next_cursor") <- page$next_cursor
+  out
 }

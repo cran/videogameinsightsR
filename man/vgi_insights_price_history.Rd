@@ -14,8 +14,8 @@ vgi_insights_price_history(
 \arguments{
 \item{steam_app_id}{Integer. The Steam App ID of the game.}
 
-\item{currency}{Character. Optional. Currency code (e.g., "USD", "EUR", "GBP").
-If not specified, returns price history for all currencies.}
+\item{currency}{Character. Optional ISO currency code (e.g. "USD", "EUR").
+When omitted, price periods for every currency are returned.}
 
 \item{auth_token}{Character string. Your VGI API authentication token.
 Defaults to the VGI_AUTH_TOKEN environment variable.}
@@ -23,55 +23,26 @@ Defaults to the VGI_AUTH_TOKEN environment variable.}
 \item{headers}{List. Optional custom headers to include in the API request.}
 }
 \value{
-If currency is specified, returns a list containing:
+A list containing:
 \describe{
-\item{steamAppId}{Integer. The Steam App ID}
-\item{currency}{Character. The currency code}
-\item{priceChanges}{Data frame with columns:
-\itemize{
-\item priceInitial: Full price without discount
-\item priceFinal: Price that the game is sold at
-\item firstDate: First date when this price was recorded
-\item lastDate: Last date when this price was active (NULL if current)
-}
-}
-}
-
-If currency is not specified, returns a list containing:
-\describe{
-\item{steamAppId}{Integer. The Steam App ID}
-\item{price}{List of price histories for each currency}
+\item{steam_app_id}{Integer. The Steam App ID}
+\item{currency}{Character. The requested currency, or "ALL"}
+\item{price_changes}{Tibble with columns \code{currency}, \code{price_initial},
+\code{price_final}, \code{first_date}, \code{last_date} (NA for the current period),
+newest period first}
 }
 }
 \description{
-Retrieve historical pricing data for a specific game across different currencies.
+Retrieve the Steam price-change periods for a game: the Steam rows of
+\code{\link[=vgi_price_history]{vgi_price_history()}}, which also covers PlayStation and Xbox prices and
+VGI-id or slug lookup.
 }
 \examples{
 \dontrun{
-# Get price history for a game in USD
-usd_history <- vgi_insights_price_history(
-  steam_app_id = 730,
-  currency = "USD"
-)
+usd <- vgi_insights_price_history(4019220, currency = "USD")
+usd$price_changes
 
-# Calculate discount percentage for each price period
-if (nrow(usd_history$priceChanges) > 0) {
-  usd_history$priceChanges$discount_pct <- 
-    round((1 - usd_history$priceChanges$priceFinal / 
-           usd_history$priceChanges$priceInitial) * 100, 1)
-}
-
-# Get price history for all currencies
-all_prices <- vgi_insights_price_history(steam_app_id = 730)
-
-# Find all currencies where the game is available
-currencies <- sapply(all_prices$price, function(x) x$currency)
-print(paste("Available in", length(currencies), "currencies"))
-
-# Identify sales periods (where priceFinal < priceInitial)
-sales <- usd_history$priceChanges[
-  usd_history$priceChanges$priceFinal < usd_history$priceChanges$priceInitial, 
-]
-print(paste("Number of sale periods:", nrow(sales)))
+all_prices <- vgi_insights_price_history(4019220)
+table(all_prices$price_changes$currency)
 }
 }

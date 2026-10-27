@@ -2,74 +2,49 @@
 % Please edit documentation in R/vgi_developer_list.R
 \name{vgi_developer_list}
 \alias{vgi_developer_list}
-\title{Get Developer List with Filtering}
+\title{Get Developer Names and IDs}
 \usage{
 vgi_developer_list(
   search = NULL,
   limit = NULL,
-  min_games = NULL,
   auth_token = Sys.getenv("VGI_AUTH_TOKEN"),
-  headers = list()
+  headers = list(),
+  vgi_ids = NULL,
+  slugs = NULL,
+  cursor = NULL,
+  all_pages = FALSE
 )
 }
 \arguments{
-\item{search}{Character string. Search term to filter developers by name. Optional.}
+\item{search}{Character. Optional case-insensitive regular expression
+applied to publisher names after download.}
 
-\item{limit}{Integer. Maximum number of results to return. Optional.}
-
-\item{min_games}{Integer. Minimum number of games published. Optional.}
+\item{limit}{Integer. Records per page (maximum 1000).}
 
 \item{auth_token}{Character string. Your VGI API authentication token.
 Defaults to the VGI_AUTH_TOKEN environment variable.}
 
 \item{headers}{List. Optional custom headers to include in the API request.}
+
+\item{vgi_ids}{Integer vector. VGI company IDs to select.}
+
+\item{slugs}{Character vector. VGI company slugs to select.}
+
+\item{cursor}{Integer. Cursor from a previous page.}
+
+\item{all_pages}{Logical. Follow the cursor through every page.}
 }
 \value{
-A data frame with columns:
-\describe{
-\item{id}{Integer. The company ID}
-\item{name}{Character. The developer name}
-}
+A \link[tibble:tibble]{tibble} with columns \code{id}, \code{name}, \code{slug} and
+\code{vgi_url}, sorted by name. The attribute \code{next_cursor} carries the cursor
+for the next page.
 }
 \description{
-Retrieve a filtered list of game developers from the Video Game Insights database.
-At least one filtering parameter is required to avoid retrieving the entire database.
-}
-\details{
-This endpoint is useful for:
-\itemize{
-\item Discovering developers matching specific criteria
-\item Building developer selection interfaces
-\item Finding developer IDs for further queries
-\item Analyzing the developer ecosystem
-}
-
-Note: At least one filtering parameter must be provided to prevent
-accidentally retrieving thousands of developers.
+Retrieve the developer directory from \verb{/companies/developers/list}, which
+pages with a cursor and includes slugs.
 }
 \examples{
 \dontrun{
-# Search for developers by name
-valve_devs <- vgi_developer_list(search = "Valve")
-print(valve_devs)
-
-# Get top developers (limit results)
-top_devs <- vgi_developer_list(limit = 100)
-cat("Retrieved", nrow(top_devs), "developers\n")
-
-# Find prolific developers
-prolific_devs <- vgi_developer_list(min_games = 10, limit = 50)
-print(prolific_devs)
-
-# Search for studios
-studios <- vgi_developer_list(search = "Studios", limit = 200)
-cat("Found", nrow(studios), "studios\n")
-
-# Get developer info for a specific developer
-dev <- vgi_developer_list(search = "Valve Corporation", limit = 1)
-if (nrow(dev) > 0) {
-  valve_info <- vgi_developer_info(dev$id[1])
-  print(valve_info)
-}
+vgi_developer_list(search = "free lives")
 }
 }

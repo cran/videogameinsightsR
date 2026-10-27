@@ -2,7 +2,7 @@
 % Please edit documentation in R/vgi_insights_followers.R
 \name{vgi_insights_followers}
 \alias{vgi_insights_followers}
-\title{Get Follower Data for a Game}
+\title{Get Follower History for a Game}
 \usage{
 vgi_insights_followers(
   steam_app_id,
@@ -21,58 +21,17 @@ Defaults to the VGI_AUTH_TOKEN environment variable.}
 \value{
 A list containing:
 \describe{
-\item{steamAppId}{Integer. The Steam App ID}
-\item{followersChange}{Data frame with columns:
-\itemize{
-\item date: Date of the data point
-\item followersTotal: Total number of followers on that date
-\item followersChange: Change in followers from previous period
-}
-}
+\item{steam_app_id}{Integer. The Steam App ID}
+\item{followers_change}{Tibble with columns \code{date}, \code{followers_total},
+\code{followers_change}}
 }
 }
 \description{
-Retrieve historical follower data for a specific game on Steam, showing how many users
-follow the game over time.
-}
-\details{
-Follower data indicates community engagement and interest:
-\itemize{
-\item Followers receive updates about the game in their Steam activity feed
-\item High follower counts suggest strong community interest
-\item Follower growth often correlates with marketing effectiveness
-\item Pre-launch follower counts can predict initial sales
-}
+Retrieve the Steam follower history for a single game.
 }
 \examples{
 \dontrun{
-# Get follower data for a game
-followers <- vgi_insights_followers(steam_app_id = 892970)
-
-# Display current followers
-current_followers <- tail(followers$followersChange, 1)$followersTotal
-print(paste("Current followers:", format(current_followers, big.mark = ",")))
-
-# Calculate growth rate
-if (nrow(followers$followersChange) >= 7) {
-  week_ago <- followers$followersChange[nrow(followers$followersChange) - 6, ]
-  weekly_growth <- current_followers - week_ago$followersTotal
-  print(paste("Weekly growth:", format(weekly_growth, big.mark = ",")))
-}
-
-# Plot follower totals and daily changes
-old_par <- par(no.readonly = TRUE)
-par(mfrow = c(2, 1))
-plot(followers$followersChange$date, followers$followersChange$followersTotal,
-     type = "l", col = "darkgreen", lwd = 2,
-     main = "Follower Growth Over Time",
-     xlab = "Date", ylab = "Total Followers")
-
-# Daily changes as bars
-barplot(followers$followersChange$followersChange,
-        col = ifelse(followers$followersChange$followersChange > 0, 
-                     "lightgreen", "lightcoral"),
-        border = NA, xlab = "Observation", ylab = "Daily Change")
-par(old_par)
+fol <- vgi_insights_followers(steam_app_id = 4019220)
+tail(fol$followers_change)
 }
 }

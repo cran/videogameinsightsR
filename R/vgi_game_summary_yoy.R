@@ -343,11 +343,11 @@ build_yoy_comparison_table <- function(yearly_summaries, include_growth = TRUE) 
   tables <- tables[!sapply(tables, is.null)]
   
   if (length(tables) == 0) {
-    return(data.frame())
+    return(tibble::tibble())
   }
   
   # Combine all years
-  combined <- do.call(rbind, tables)
+  combined <- dplyr::bind_rows(tables)
   
   # Pivot to wide format for comparison
   metrics_cols <- c("avg_peak_ccu", "avg_avg_ccu", "total_revenue", 
@@ -424,7 +424,7 @@ combine_yoy_time_series <- function(yearly_summaries) {
     }
     
     if (length(combined_data) > 0) {
-      time_series[[metric]] <- do.call(rbind, combined_data)
+      time_series[[metric]] <- dplyr::bind_rows(combined_data)
     }
   }
   
